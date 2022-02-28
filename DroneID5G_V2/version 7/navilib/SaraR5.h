@@ -32,6 +32,11 @@
 #define SARA_R5_MESSAGE_PDP_CONFIG "AT+UPSD" // Packet switched Data Profile configuration
 #define SARA_R5_HTTP_PROFILE "AT+UHTTP" // Configure the HTTP profile. Up to 4 different profiles can be defined
 #define SARA_R5_HTTP_COMMAND "AT+UHTTPC" // Trigger the specified HTTP command
+#define SARA_R5_GNSS_REQUEST_LOCATION "AT+ULOC" // Ask for localization information
+#define SARA_R5_GNSS_ASSISTED_IND "AT+UGIND" // Assisted GNSS unsolicited indication
+#define SARA_R5_GNSS_CONFIGURE_SENSOR "AT+ULOCGNSS" // Configure GNSS sensor
+#define SARA_R5_GNSS_CONFIGURE_LOCATION "AT+ULOCCELL" // Configure cellular location sensor (CellLocate®)
+
 class SaraR5
 {
 public:
@@ -76,6 +81,7 @@ private:
     String HO_AttemptCount;
     String HO_SuccessCount;
     String HO_FailureCount;
+    String serialNumber; 
 
 
     // Functions:
@@ -113,7 +119,7 @@ private:
     bool checkIfAsterisk(char &c); // Ny
 
     void tester();
-    /// HTTP:
+    /// HTTP :
     void deactivatePSD(int cid);
     void setPDPconfiguration(int profile, int parameter, int value);
     void getAPN(int cid, String &apn, String &ip);
@@ -121,7 +127,9 @@ private:
     void setupPSDprofile();
     void configurePacketSwitchData();
     void resetHTTPprofile(int profile);
-    void setHTTPserverName(int profile, String serverName);
+    void setHTTPserver(int profile, int OP_CODE, String serverName);
+    void setHTTPserverPort(int profile, int OP_CODE, int serverPort);
+
     void setHTTPsecure(int profile, boolean secure);
     void setupHTTP();
     void sendHTTPPOSTdata(int profile, String path, String responseFilename, String data, int httpContentType);
@@ -129,6 +137,14 @@ private:
     void listFiles();
     void readFiles();
 
+    // Encoding 
+    String encodeMessage();
+
+    // Hybrid positioning 
+    void HybridPositioningSetup();
+    void HybridPositioning(); 
+
+   
 };
 
 #endif
