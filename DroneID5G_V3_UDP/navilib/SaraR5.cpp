@@ -1,5 +1,5 @@
 /*
-  SaraR5.cpp - Library for sending HTTP commands to Naviair via u-blox SARA-R5 chip.
+  SaraR5.cpp - Library for sending HTTP ATcommands to Naviair via u-blox SARA-R5 chip.
 
 */
 
@@ -33,11 +33,12 @@ SaraR5::SaraR5(NaviairLib* _droneID){
 
     PSDprofile = 0;
     HTTPprofile = 0;
+    socketID = -1; 
     
-    serialNumber = "AB1234";
+    serialNumber = "ab1234";
 
-    command = "{\"write_api_key\": \"RJ9P1U1PKXIYX8MS\",\"updates\": [{\"delta_t\": 0,\"field1\": 1.0,\"field2\": \"2.0";
-    response = "{\"write_api_key\": \"RJ9P1U1PKXIYX8MS\",\"updates\": [{\"delta_t\": 0,\"field1\": 1.0,\"field2\": \"2.0";
+    ATcommand = "{\"write_api_key\": \"RJ9P1U1PKXIYX8MS\",\"updates\": [{\"delta_t\": 0,\"field1\": 1.0,\"field2\": \"2.0";
+    ATresponse = "{\"write_api_key\": \"RJ9P1U1PKXIYX8MS\",\"updates\": [{\"delta_t\": 0,\"field1\": 1.0,\"field2\": \"2.0";
 
    // tmElements_t my_time;  // time elements structure
 
@@ -47,7 +48,7 @@ SaraR5::SaraR5(NaviairLib* _droneID){
 
     //      NODE JS server 
     serverName = "genius-lte-m.sdu.dk";
-
+    serverPort = "130.225.157.81";
 
     //serverName = "10.133.123.12:8080"
 
@@ -107,16 +108,16 @@ void SaraR5::beginSerial()
 void SaraR5::waitForLTESignal() {
     SerialUSB.println("Waiting for operator connection...");
     int counter = 0;
-    String response;
+    String ATresponse;
     while(counter < 300) {
-        response = getOperatorInfo();
+        ATresponse = getOperatorInfo();
         counter++;
-        SerialUSB.println(response);
-        //Serial.println("Start of response:");
-        //Serial.println(response);
-        //Serial.println("End of response:");
-        if(response.indexOf("TDC") > 0){ // Check if message contains "TDC"
-            //Serial.println(response);
+        SerialUSB.println(ATresponse);
+        //Serial.println("Start of ATresponse:");
+        //Serial.println(ATresponse);
+        //Serial.println("End of ATresponse:");
+        if(ATresponse.indexOf("TDC") > 0){ // Check if message contains "TDC"
+            //Serial.println(ATresponse);
             SerialUSB.println("Connection to TDC network established!");
             break;
         }
@@ -126,12 +127,12 @@ void SaraR5::waitForLTESignal() {
 
 void SaraR5::waitForBoardOK() {
     int counter = 0;
-    String response;
+    String ATresponse;
     while(counter < 20) {
-        response = checkStatus();
+        ATresponse = checkStatus();
         counter++;
-        //Serial.println(response);
-        if(response.indexOf("OK") > 0){ // Check if message contains "OK"
+        //Serial.println(ATresponse);
+        if(ATresponse.indexOf("OK") > 0){ // Check if message contains "OK"
             SerialUSB.println("OK recieved! Board is powered and online.");
             break;
         }
@@ -143,7 +144,7 @@ String SaraR5::checkStatus() {
 
     //serialWriteToSara.println("AT\r");
     Serial1.println("AT\r");
-    String response = "no response";
+    String ATresponse = "no ATresponse";
     delay(2500);
     /*
     while (serialWriteToSara.available())
@@ -153,100 +154,100 @@ String SaraR5::checkStatus() {
         */
 
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    return response;
+    return ATresponse;
 }
 
 void SaraR5::enableGPS() {
-    String response = "no response";
+    String ATresponse = "no ATresponse";
 
     // Read GPS status
     Serial1.println("AT+UGPS?\r");
     delay(10);
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    SerialUSB.println(response);
+    SerialUSB.println(ATresponse);
 
-    if(response.indexOf("1") > 0) // Check if message contains "OK"
+    if(ATresponse.indexOf("1") > 0) // Check if message contains "OK"
         SerialUSB.println("GNSS module already on.");
     else{// Enable the GPS module
             SerialUSB.println("Turning on GNSS module...\r");
             Serial1.println("AT+UGPS=1,15,127\r");
             delay(2000);
             while (Serial1.available()){
-                response = Serial1.readString();
+                ATresponse = Serial1.readString();
             }
-            if(response.indexOf("OK") > 0) // Check if message contains "OK"
+            if(ATresponse.indexOf("OK") > 0) // Check if message contains "OK"
                 SerialUSB.println("OK recieved! GNSS module is on and using all GNSS systems.");
             else
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
     }
 
-    //Serial.println(response);
+    //Serial.println(ATresponse);
 
     // Enable storing of the last value of NMEA $RMC messages
     Serial1.println("AT+UGRMC=1\r");
-    response = "no response";
+    ATresponse = "no ATresponse";
 
     delay(10);
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    if(response.indexOf("OK") > 0) // Check if message contains "OK"
+    if(ATresponse.indexOf("OK") > 0) // Check if message contains "OK"
         SerialUSB.println("OK recieved! Storing of NMEA $RMC messages is enable.");
 
     // Enable storing of the last value of NMEA $GGA messages
     Serial1.println("AT+UGGGA=1\r");
-    response = "no response";
+    ATresponse = "no ATresponse";
 
     delay(10);
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    if(response.indexOf("OK") > 0) // Check if message contains "OK"
+    if(ATresponse.indexOf("OK") > 0) // Check if message contains "OK"
         SerialUSB.println("OK recieved! Storing of NMEA $GGA messages is enable.");
-    //Serial.println(response);
+    //Serial.println(ATresponse);
 
     // Enable storing of the last value of NMEA $GSA messages
     Serial1.println("AT+UGGSA=1\r");
-    response = "no response";
+    ATresponse = "no ATresponse";
 
     delay(10);
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    if(response.indexOf("OK") > 0) // Check if message contains "OK"
+    if(ATresponse.indexOf("OK") > 0) // Check if message contains "OK"
         SerialUSB.println("OK recieved! Storing of NMEA $GSA messages is enable.");
-    //Serial.println(response);
+    //Serial.println(ATresponse);
 }
 
 
 void SaraR5::enableCellInformation() {
-    String response = "no response";
+    String ATresponse = "no ATresponse";
 
     Serial1.println("AT+UMETRIC=4,2048"); // enable read without tag and getting LTE UE STATS -> 12. bit to 1 = 2048
     delay(10);
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    //SerialUSB.println(response);
+    //SerialUSB.println(ATresponse);
 
 }
 
 String SaraR5::getOperatorInfo() {
     Serial1.println("AT+COPS?\r");
-    String response = "no response";
+    String ATresponse = "no ATresponse";
     delay(1000);
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    return response;
+    return ATresponse;
 }
 
 void SaraR5::checkSimCardId() {
-    String response = "no response";
+    String ATresponse = "no ATresponse";
 
 
     SerialUSB.println("Sim Card Circuit Card ID:");
@@ -254,26 +255,26 @@ void SaraR5::checkSimCardId() {
 
     Serial1.println("AT+CCID");
 
-    response = "no response";
+    ATresponse = "no ATresponse";
     delay(50);
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    SerialUSB.println(response);
+    SerialUSB.println(ATresponse);
 
 }
 
 void SaraR5::searchForNetworks() {
-    String response = "no response";
+    String ATresponse = "no ATresponse";
 
     Serial1.println("AT+COPN");
 
-    response = "no response";
+    ATresponse = "no ATresponse";
     delay(100);
     while (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
-    SerialUSB.println(response);
+    SerialUSB.println(ATresponse);
 
 }
 
@@ -592,23 +593,23 @@ void SaraR5::logUMetric(){
     // SerialUSB.print("logUmetric");
 
     // Serial1.println("AT+UMETRIC?\r");
-    // response = "no response";
+    // ATresponse = "no ATresponse";
     // delay(1000);
 
    
     // while (!Serial1.available()); /// Wait on data
 
     // if (Serial1.available()){
-    //     response = Serial1.readString();
+    //     ATresponse = Serial1.readString();
     // }
 
-    // SerialUSB.println(response);
+    // SerialUSB.println(ATresponse);
 
 
 
 
 
-    command = "AT+UMETRIC?" ;
+    ATcommand = "AT+UMETRIC?" ;
     //  /// 14:22:12.248 -> +UMETRIC: 3,UL_NumberOfRbIds:0,CE_Level:1,DL_NumberOfRbIds:0,DL_NumOfPcktsDropMac:0,total_cell_reselections:0,total_radioLinkLoss:0,powerSavingMode:1,high_Mobility:1,connEstablishAttemptCount:7,
     //connEstablishSuccessCount:7,connEstablishFailureCount:0,reestablishmentAttemptCount:0,reestablishmentSuccessCount:0,reestablishmentFailureCount:0
     //,HO_AttemptCount:0,HO_SuccessCount:0,HO_FailureCount:0,EUTRAN_ConnReleaseCount:0,nas_num_of_attach:0, nas_num_of_tau:0, nas_num_of_service_request:4, nas_num_of_pdn_disconnect_req:0, nas_num_of_pdn_register_req:0, nas_num_of_auth:0, nas_num_of_bearer_resource_modify_req:0, nas_num_of_detach:0, nas_num_of_internal_detach_limit:0, nas_num_of_bearer_resource_alloc_req:0, nas_num_of_mt_sms_retry:0, nas_num_of_mo_sms_retry:0, nas_num_of_lpp_retransmission:0,nas_num_of_performance_attach:1,nas_num_of_performance_detach:0,nas_num_of_performance_deactivate:0,nas_num_of_performance_tracking:2,nas_num_of_performance_defaultBearer:0,nas_num_of_performance_dedicatedBearer:0,nas_num_of_performance_resourceModify:0,nas_num_of_performance_resourceSetup:0
@@ -640,87 +641,87 @@ void SaraR5::logUMetric(){
         delay(2000);
         Serial1.flush();
 
-        Serial1.println(command);
+        Serial1.println(ATcommand);
         
         SerialUSB.println("U metric  ");//
 
         //delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
             
             if(index > -1) //IF "OK" is received
             {
-                response = response.substring(response.indexOf("+UMETRIC:")+1,response.length()); 
+                ATresponse = ATresponse.substring(ATresponse.indexOf("+UMETRIC:")+1,ATresponse.length()); 
                 
-                //response = "OK "; //
-                SerialUSB.println("OK len : " + String(response.length()));
-                //SerialUSB.println(response);     
+                //ATresponse = "OK "; //
+                SerialUSB.println("OK len : " + String(ATresponse.length()));
+                //SerialUSB.println(ATresponse);     
 
-                response = response.substring(response.indexOf("total_cell_reselections:")+1,response.length()); 
-                //SerialUSB.println(response);
+                ATresponse = ATresponse.substring(ATresponse.indexOf("total_cell_reselections:")+1,ATresponse.length()); 
+                //SerialUSB.println(ATresponse);
 
-                total_cell_reselections = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                total_cell_reselections = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("total_cell_reselections:"+ total_cell_reselections);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
                 
-                response = response.substring(response.indexOf("total_radioLinkLoss:")+1,response.length());  
-                total_radioLinkLoss =response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("total_radioLinkLoss:")+1,ATresponse.length());  
+                total_radioLinkLoss =ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("total_radioLinkLoss:" + total_radioLinkLoss);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
 
-                response = response.substring(response.indexOf("connEstablishAttemptCount")+1,response.length());  
-                connEstablishAttemptCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("connEstablishAttemptCount")+1,ATresponse.length());  
+                connEstablishAttemptCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("connEstablishAttemptCount:" + connEstablishAttemptCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
                 
-                response = response.substring(response.indexOf("connEstablishSuccessCount")+1,response.length()); //14,0,0,0,0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 -- 11
-                connEstablishSuccessCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("connEstablishSuccessCount")+1,ATresponse.length()); //14,0,0,0,0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 -- 11
+                connEstablishSuccessCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("connEstablishSuccessCount:"+ connEstablishSuccessCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
 
-                response = response.substring(response.indexOf("connEstablishFailureCount")+1,response.length()); //0,0,0,0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --12
-                connEstablishFailureCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("connEstablishFailureCount")+1,ATresponse.length()); //0,0,0,0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --12
+                connEstablishFailureCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("connEstablishFailureCount:"+ connEstablishFailureCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
 
-                response = response.substring(response.indexOf("reestablishmentAttemptCount")+1,response.length()); //0,0,0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --13
-                reestablishmentAttemptCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("reestablishmentAttemptCount")+1,ATresponse.length()); //0,0,0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --13
+                reestablishmentAttemptCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("reestablishmentAttemptCount:"+ reestablishmentAttemptCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
 
-                response = response.substring(response.indexOf("reestablishmentSuccessCount")+1,response.length()); //0,0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --14
-                reestablishmentSuccessCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("reestablishmentSuccessCount")+1,ATresponse.length()); //0,0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --14
+                reestablishmentSuccessCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("reestablishmentSuccessCount:"+ reestablishmentSuccessCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
 
-                response = response.substring(response.indexOf("reestablishmentFailureCount")+1,response.length()); //0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --15
-                reestablishmentFailureCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("reestablishmentFailureCount")+1,ATresponse.length()); //0,0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --15
+                reestablishmentFailureCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("reestablishmentFailureCount:"+ reestablishmentFailureCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
 
-                response = response.substring(response.indexOf("HO_AttemptCount")+1,response.length()); //0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --16
-                HO_AttemptCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("HO_AttemptCount")+1,ATresponse.length()); //0,0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --16
+                HO_AttemptCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("HO_AttemptCount:"+ HO_AttemptCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
 
-                response = response.substring(response.indexOf("HO_SuccessCount")+1,response.length()); //0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --17
-                HO_SuccessCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("HO_SuccessCount")+1,ATresponse.length()); //0,0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --17
+                HO_SuccessCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("HO_SuccessCount:"+ HO_SuccessCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
                 
-                response = response.substring(response.indexOf("HO_FailureCount")+1,response.length()); //0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --18
-                HO_FailureCount = response.substring(response.indexOf(":")+1,response.indexOf(","));
+                ATresponse = ATresponse.substring(ATresponse.indexOf("HO_FailureCount")+1,ATresponse.length()); //0,0,0,0,13,11,12,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0 --18
+                HO_FailureCount = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(","));
                 SerialUSB.println("HO_FailureCount:"+ HO_FailureCount);
-                //SerialUSB.println(response);
+                //SerialUSB.println(ATresponse);
 
                 break;
             }
             else
             {
 
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -734,29 +735,29 @@ void SaraR5::logLTEStats() {
     String str;
 
     Serial1.println("AT+CESQ\r");
-    response = "no response";
+    ATresponse = "no ATresponse";
     delay(50);
 
-    int responseCounter= 0; 
+    int ATresponseCounter= 0; 
 
-    while(!Serial1.available() && responseCounter<100)
+    while(!Serial1.available() && ATresponseCounter<100)
     {
         delay(10);
-        responseCounter = responseCounter + 1; 
+        ATresponseCounter = ATresponseCounter + 1; 
     }
 
     if (Serial1.available()){
-        response = Serial1.readString();
+        ATresponse = Serial1.readString();
     }
 
-    //SerialUSB.println(response);
+    //SerialUSB.println(ATresponse);
 
-    if(response.indexOf("O") > 0) { // Check if message contains "OK"
+    if(ATresponse.indexOf("O") > 0) { // Check if message contains "OK"
         // Find commas starting from behind.
         int index = 0;
         char c;
-        for (int i = response.length(); 0 < i; i--) {
-            c = response[i];
+        for (int i = ATresponse.length(); 0 < i; i--) {
+            c = ATresponse[i];
             if (checkIfComma(c)){
                 commaList[index] = i;
                 //SerialUSB.println(i);
@@ -765,7 +766,7 @@ void SaraR5::logLTEStats() {
             }
         }
 
-        str = response.substring(commaList[1]+1,commaList[0]); // RSRQ
+        str = ATresponse.substring(commaList[1]+1,commaList[0]); // RSRQ
         //SerialUSB.println(str);
         temp = str.toInt();
         if(temp < 1)
@@ -779,7 +780,7 @@ void SaraR5::logLTEStats() {
 
         SerialUSB.print(rsrq); SerialUSB.println(" - RSRQ_float");
 
-        str = response.substring(commaList[0]+1,response.length()); // RSRP
+        str = ATresponse.substring(commaList[0]+1,ATresponse.length()); // RSRP
         temp = str.toInt();
 
         if(temp < 1)
@@ -793,7 +794,7 @@ void SaraR5::logLTEStats() {
 
         SerialUSB.print(rsrp); SerialUSB.println(" - RSRP");
 
-        SerialUSB.println(response);
+        SerialUSB.println(ATresponse);
         
         
 
@@ -804,33 +805,33 @@ void SaraR5::RSSI()
 {
     int temp;
     String str;
-    int responseCounter;
+    int ATresponseCounter;
 
 
-    command = "AT+CSQ" ;
+    ATcommand = "AT+CSQ" ;
 
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
-        //SerialUSB.println("Test command active ");//
-        responseCounter= 0; 
-        while(!Serial1.available() && responseCounter<100)
+        Serial1.println(ATcommand); //
+        //SerialUSB.println("Test ATcommand active ");//
+        ATresponseCounter= 0; 
+        while(!Serial1.available() && ATresponseCounter<100)
         {
             delay(10);
-            responseCounter = responseCounter + 1; 
+            ATresponseCounter = ATresponseCounter + 1; 
         }
 
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                str = response.substring(response.indexOf(":")+1,commaList[4]); // RSSI
+                //ATresponse = "OK "; //
+                str = ATresponse.substring(ATresponse.indexOf(":")+1,commaList[4]); // RSSI
                 temp = str.toInt();
 
 
@@ -848,7 +849,7 @@ void SaraR5::RSSI()
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -859,37 +860,37 @@ void SaraR5::RSSI()
 void SaraR5::performPDPaction(int profile, int action)
 {
 
-    command = SARA_R5_MESSAGE_PDP_ACTION;
-    command += "=" + String(profile) + "," + String(action); // 0 is deactivate
+    ATcommand = SARA_R5_MESSAGE_PDP_ACTION;
+    ATcommand += "=" + String(profile) + "," + String(action); // 0 is deactivate
 
     int counter = 0;
     // VI skal deaktivere profil nul
     while(counter < 4 )
     {
-        Serial1.println(command); //Read the Packet Data protocol data
+        Serial1.println(ATcommand); //Read the Packet Data protocol data
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index1 = response.indexOf("UUPSDA: ");
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index1 = ATresponse.indexOf("UUPSDA: ");
 
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
             if(index1 > -1)
             {
-                response = response.substring(index1 + 7, response.length());
-                SerialUSB.println("Profile is activated with IP_address" + response);
+                ATresponse = ATresponse.substring(index1 + 7, ATresponse.length());
+                SerialUSB.println("Profile is activated with IP_address" + ATresponse);
                 break;
             }
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -919,28 +920,28 @@ void SaraR5::setupPSDprofile() // Packet Switch Data Profile
 void SaraR5::resetHTTPprofile(int profile)
 {
 
-    command = SARA_R5_HTTP_PROFILE ;
-    command += "=" + String(profile); // profile 0-4
+    ATcommand = SARA_R5_HTTP_PROFILE ;
+    ATcommand += "=" + String(profile); // profile 0-4
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
+        Serial1.println(ATcommand); //
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
+                //ATresponse = "OK "; //
                 SerialUSB.println("The profile is reset");
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -949,13 +950,13 @@ void SaraR5::resetHTTPprofile(int profile)
 void SaraR5::setHTTPserver(int profile, int OP_CODE, String serverName)
 {
 
-    command = SARA_R5_HTTP_PROFILE ;
-    command += "=" + String(profile) + "," + String(OP_CODE) +","+ "\""+ serverName + "\""; // profile 0-4
-    //command = "AT+UHHTP=0,1,\"api.thingspeak.com/channels/1555456/bulk_update.json\"";
+    ATcommand = SARA_R5_HTTP_PROFILE ;
+    ATcommand += "=" + String(profile) + "," + String(OP_CODE) +","+ "\""+ serverName + "\""; // profile 0-4
+    //ATcommand = "AT+UHHTP=0,1,\"api.thingspeak.com/channels/1555456/bulk_update.json\"";
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command);
+        Serial1.println(ATcommand);
         //Serial1.println("AT+UHHTP=0,1,\"api.thingspeak.com/channels/1555456/bulk_update.json\""); //
         //SerialUSB.println("Setting server Name");//
         //SerialUSB.println(serverName);//
@@ -963,20 +964,20 @@ void SaraR5::setHTTPserver(int profile, int OP_CODE, String serverName)
 
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -985,13 +986,13 @@ void SaraR5::setHTTPserver(int profile, int OP_CODE, String serverName)
 void SaraR5::setHTTPserverPort(int profile, int OP_CODE, int serverPort)
 {
 
-    command = SARA_R5_HTTP_PROFILE ;
-    command += "=" + String(profile) + "," + String(OP_CODE) +","+ String(serverPort)  ; // profile 0-4
-    //command = "AT+UHHTP=0,1,\"api.thingspeak.com/channels/1555456/bulk_update.json\"";
+    ATcommand = SARA_R5_HTTP_PROFILE ;
+    ATcommand += "=" + String(profile) + "," + String(OP_CODE) +","+ String(serverPort)  ; // profile 0-4
+    //ATcommand = "AT+UHHTP=0,1,\"api.thingspeak.com/channels/1555456/bulk_update.json\"";
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command);
+        Serial1.println(ATcommand);
         //Serial1.println("AT+UHHTP=0,1,\"api.thingspeak.com/channels/1555456/bulk_update.json\""); //
         //SerialUSB.println("Setting server Name");//
         //SerialUSB.println(serverName);//
@@ -999,20 +1000,20 @@ void SaraR5::setHTTPserverPort(int profile, int OP_CODE, int serverPort)
 
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -1022,29 +1023,29 @@ void SaraR5::setHTTPserverPort(int profile, int OP_CODE, int serverPort)
 void SaraR5::listFiles()
 {
 
-    command = "AT+ULSTFILE" ;
-    command +=  "="; // profile 0-4
+    ATcommand = "AT+ULSTFILE" ;
+    ATcommand +=  "="; // profile 0-4
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
+        Serial1.println(ATcommand); //
         SerialUSB.println("List files");//
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -1054,29 +1055,29 @@ void SaraR5::listFiles()
 void SaraR5::readFiles()
 {
 
-    command = "AT+URDFILE" ;
-    command +=  "=\"post_response.txt\""; // profile 0-4
+    ATcommand = "AT+URDFILE" ;
+    ATcommand +=  "=\"post_ATresponse.txt\""; // profile 0-4
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
+        Serial1.println(ATcommand); //
         SerialUSB.println("Read file");//
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf(":");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf(":");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -1086,30 +1087,30 @@ void SaraR5::readFiles()
 void SaraR5::tester()
 {
 
-    command = "AT+UMETRIC=3,2048" ; // Defines what cell information we want to read, and how to read it 
-    //command = "AT+CSQ" ;
+    ATcommand = "AT+UMETRIC=3,2048" ; // Defines what cell information we want to read, and how to read it 
+    //ATcommand = "AT+CSQ" ;
 
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
-        SerialUSB.println("Test command active ");//
+        Serial1.println(ATcommand); //
+        SerialUSB.println("Test ATcommand active ");//
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -1119,29 +1120,29 @@ void SaraR5::tester()
 void SaraR5::setHTTPsecure(int profile, boolean secure)
 {
 
-    command = SARA_R5_HTTP_PROFILE ;
-    command += "=" + String(profile) + "," + SARA_R5_HTTP_OP_SECURE +","+ secure  ; // profile 0-4
+    ATcommand = SARA_R5_HTTP_PROFILE ;
+    ATcommand += "=" + String(profile) + "," + SARA_R5_HTTP_OP_CODE_SECURE +","+ secure  ; // profile 0-4
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
+        Serial1.println(ATcommand); //
         SerialUSB.println("Setting server security");//
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -1170,60 +1171,60 @@ void SaraR5::setupHTTP()
 
 }
 
-void SaraR5::sendHTTPPOSTdata(int profile, String path, String responseFilename,
+void SaraR5::sendHTTPPOSTdata(int profile, String path, String ATresponseFilename,
                               String data, int httpContentType)
 {
     //SerialUSB.println("Send HTTP1");
-    command = SARA_R5_HTTP_COMMAND;
-    command +=  "=" + String(profile) + "," + SARA_R5_HTTP_COMMAND_POST_DATA +","+ "\""+path + "\"" + "," +  "\"" + responseFilename + "\"" + "," + "\"" + data + "\"" + "," + String(httpContentType) ; // profile 0-4
-    //SerialUSB.println(command); //
+    ATcommand = SARA_R5_HTTP_COMMAND;
+    ATcommand +=  "=" + String(profile) + "," + SARA_R5_HTTP_COMMAND_POST_DATA +","+ "\""+path + "\"" + "," +  "\"" + ATresponseFilename + "\"" + "," + "\"" + data + "\"" + "," + String(httpContentType) ; // profile 0-4
+    //SerialUSB.println(ATcommand); //
     int counter = 0;
-    int responseCounter; 
+    int ATresponseCounter; 
     
     Serial1.flush();
         
     //SerialUSB.println("Send HTTP POST data");//
     
-    Serial1.println(command); //
-    SerialUSB.println("Sending message" + command); //
+    Serial1.println(ATcommand); //
+    SerialUSB.println("Sending message" + ATcommand); //
     
         
     while(counter < 15 )
     {
         
 
-        responseCounter= 0; 
-        while(!Serial1.available() && responseCounter<100)
+        ATresponseCounter= 0; 
+        while(!Serial1.available() && ATresponseCounter<100)
         {
             delay(10);
-            responseCounter = responseCounter + 1; 
+            ATresponseCounter = ATresponseCounter + 1; 
         }
-        SerialUSB.println("Response counter : " + String(responseCounter));
+        SerialUSB.println("ATresponse counter : " + String(ATresponseCounter));
         
         if (Serial1.available()){
             
             
-            response = Serial1.readString();    
+            ATresponse = Serial1.readString();    
             
 
-            int index = response.indexOf("UUHTTPCR");
-            //response = response.substring(index,response.length());
-            //SerialUSB.println(response);
+            int index = ATresponse.indexOf("UUHTTPCR");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+            //SerialUSB.println(ATresponse);
 
             if(index > -1) //IF "OK" is received   
             {
-                //response = "OK "; //
-                SerialUSB.println("Response UUHTTPCR :" + response);
+                //ATresponse = "OK "; //
+                SerialUSB.println("ATresponse UUHTTPCR :" + ATresponse);
                 break;
             }
             else
             {
-                SerialUSB.println("Not Ready : " + response);
+                SerialUSB.println("Not Ready : " + ATresponse);
             }
         }
         counter = counter + 1;
     }
-    //SerialUSB.println("Got response "); //
+    //SerialUSB.println("Got ATresponse "); //
     
 
 }
@@ -1280,7 +1281,7 @@ String SaraR5::encodeMessage()
         headingAdderBit = "1";
     }
     String hexEncodedHeading = String(encodedHeading,HEX);
-    while(hexEncodedHeading.length()<2){
+    if(hexEncodedHeading.length()<2){
         hexEncodedHeading = "0" + hexEncodedHeading;
     }
 
@@ -1356,7 +1357,7 @@ String SaraR5::encodeMessage()
 
 
     // Encoded 
-    SerialUSB.println(serialNumber + " Flags: " + String(EncodedFlags, HEX) + " Speed :" + hexEncodedSpeed + " Heading : " + hexEncodedHeading + " LAT:"+ String(hexEncodedLat) + " Lon:" + String(hexEncodedLong) + " AMSL:" + String(hexEncodedAMSL) + " HDOP:" + String(hexEncodedHDOP) + " VDOP:" + String(hexEncodedVDOP) + " Time:" + String(hexEncodedTime));
+    SerialUSB.print(serialNumber + " Flags: " + String(EncodedFlags, HEX) + " Speed :" + hexEncodedSpeed + " Heading : " + hexEncodedHeading + " LAT:"+ String(hexEncodedLat) + " Lon:" + String(hexEncodedLong) + " AMSL:" + String(hexEncodedAMSL) + " HDOP:" + String(hexEncodedHDOP) + " VDOP:" + String(hexEncodedVDOP) + " Time:" + String(hexEncodedTime));
     outputString =  serialNumber + String(EncodedFlags, HEX) + hexEncodedSpeed + hexEncodedHeading + String(hexEncodedLat) + String(hexEncodedLong) + String(hexEncodedAMSL) + String(hexEncodedHDOP) + String(hexEncodedVDOP) + String(hexEncodedTime);
     
     return outputString;
@@ -1378,108 +1379,161 @@ void SaraR5::sendHTTPusingPOST()
     // payload3 = "api_key=" + apiKey3 + "&field1=" + String(droneID->timestamp) + "&field2=" + reestablishmentAttemptCount + "&field3=" + reestablishmentSuccessCount + "&field4=" + reestablishmentFailureCount + "&field5=" +HO_AttemptCount+"&field6="+ HO_SuccessCount + "&field7=" + HO_FailureCount + "&field8="+ String(rssi); 
    
     // // WWW-web-application
-    // sendHTTPPOSTdata(HTTPprofile, "/update", "post_response1.txt", payload1, SARA_R5_HTTP_CONTENT_APPLICATION_X_WWW);
-    // sendHTTPPOSTdata(HTTPprofile, "/update", "post_response2.txt", payload2, SARA_R5_HTTP_CONTENT_APPLICATION_X_WWW);
-    // sendHTTPPOSTdata(HTTPprofile, "/update", "post_response3.txt", payload3, SARA_R5_HTTP_CONTENT_APPLICATION_X_WWW);
+    // sendHTTPPOSTdata(HTTPprofile, "/update", "post_ATresponse1.txt", payload1, SARA_R5_HTTP_CONTENT_APPLICATION_X_WWW);
+    // sendHTTPPOSTdata(HTTPprofile, "/update", "post_ATresponse2.txt", payload2, SARA_R5_HTTP_CONTENT_APPLICATION_X_WWW);
+    // sendHTTPPOSTdata(HTTPprofile, "/update", "post_ATresponse3.txt", payload3, SARA_R5_HTTP_CONTENT_APPLICATION_X_WWW);
 
     //payload1 = "FFFF06140F2104C04A063121BE03FD03FD03FD00000E1B" //46 bytes HEX ENCODED
     payload1 = encodeMessage();//"Heej fra DroneID5G"; //52 bytes deciman
 
     //                  For SDU node js server 
     // FOR SDU SERVER 
-    sendHTTPPOSTdata(HTTPprofile, "/post-test", "post_response.txt", payload1, SARA_R5_HTTP_CONTENT_TEXT_PLAIN);
+    sendHTTPPOSTdata(HTTPprofile, "/post-test", "post_ATresponse.txt", payload1, SARA_R5_HTTP_CONTENT_TEXT_PLAIN);
 
 
-    //              READ response 
+    //              READ ATresponse 
     //listFiles();
 
     //readFiles();
 
 }
 
-void SaraR5::HybridPositioningSetup()
+
+int SaraR5::socketOpen(int protocol_OP_code)
 {
-    command = SARA_R5_GNSS_CONFIGURE_SENSOR;
-    command += "=15" ; // + String(profile) + "," + SARA_R5_HTTP_OP_SECURE +","+ secure  ; // profile 0-4
+    int socketIDoutput = -1; 
+    ATcommand = SARA_R5_CREATE_SOCKET;
+    ATcommand += "=" + String(protocol_OP_code);
+
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
-        SerialUSB.println(command);//
+        Serial1.println(ATcommand); //
+        SerialUSB.println("Setting up Socket for UDP/TCP");//
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                
+                socketIDoutput = ATresponse.substring(ATresponse.indexOf("+USOCR:")+7,ATresponse.indexOf("+USOCR:")+9).toInt();
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
     }
-    command = SARA_R5_GNSS_CONFIGURE_LOCATION;
-    command += "=0" ; // + String(profile) + "," + SARA_R5_HTTP_OP_SECURE +","+ secure  ; // profile 0-4
-    counter = 0;
+    return socketIDoutput;
+}
+void SaraR5::SendtoCommandUDP(int socketID, String remote_IP_adress, int remote_port, int bytesWritten, String dataString)
+{
+    //ATcommand = "AT+USOST=0,\"130.225.157.81\",8080,3,\"Ab1234\"";
+    ATcommand = SARA_R5_WRITE_UDP_SOCKET; //"AT+USOST=0,\"130.225.157.81\",8080,38,\"AB1234800002104e3c60632408507c9070b681\""; //SARA_R5_WRITE_UDP_SOCKET; //
+    ATcommand += "=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+    int ATresponseCounter = 0; 
+    int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
-        SerialUSB.println(command);//
-        delay(1000);
+        Serial1.println(ATcommand); //
+        SerialUSB.println("SendTo UDP message");//
+        
+        ATresponseCounter= 0; 
+        while(!Serial1.available() && ATresponseCounter<100)
+        {
+            delay(10);
+            ATresponseCounter = ATresponseCounter + 1; 
+        }
+
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
     }
 }
 
-void SaraR5::HybridPositioning()
+void SaraR5::getSocketError()
 {
-     command = SARA_R5_GNSS_REQUEST_LOCATION; //SARA_R5_GNSS_REQUEST_LOCATION;
-    command += "=2,3,0,120,15,1" ; // + String(profile) + "," + SARA_R5_HTTP_OP_SECURE +","+ secure  ; // profile 0-4
+    ATcommand = "AT+USOER";
+    //ATcommand += "=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+
     int counter = 0;
     while(counter < 4 )
     {
-        Serial1.println(command); //
-        SerialUSB.println(command);//
+        Serial1.println(ATcommand); //
+        SerialUSB.println("Socket Error");//
         delay(1000);
         if (Serial1.available()){
-            response = Serial1.readString();
-            //Serial1.println(response);
-            int index = response.indexOf("OK");
-            //response = response.substring(index,response.length());
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
 
             if(index > -1) //IF "OK" is received
             {
-                //response = "OK "; //
-                SerialUSB.println(response);
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                
                 break;
             }
             else
             {
-                SerialUSB.println(response);
+                SerialUSB.println(ATresponse);
+            }
+        }
+        counter = counter + 1;
+    }
+}
+void SaraR5::HEXconfig(int bool1)
+{
+    ATcommand = "AT+UDCONF=1,";
+    ATcommand += String(bool1); //"=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+
+    int counter = 0;
+    while(counter < 4 )
+    {
+        Serial1.println(ATcommand); //
+        SerialUSB.println("Hex config");//
+        delay(1000);
+        if (Serial1.available()){
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+
+            if(index > -1) //IF "OK" is received
+            {
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                
+                break;
+            }
+            else
+            {
+                SerialUSB.println(ATresponse);
             }
         }
         counter = counter + 1;
@@ -1515,13 +1569,20 @@ void SaraR5::init() { //Setup
     //HTTP
     setupPSDprofile();  //PÅ Normalt 
 
-    setupHTTP(); // PÅ NORMALT 
+    //setupHTTP(); // PÅ NORMALT 
 
   //  HybridPositioningSetup();
   //  HybridPositioning();
 
 
     //tester();
+
+    //erialUSB.println("socket");
+    HEXconfig(1);
+
+    socketID = socketOpen(SARA_R5_UDP);
+    
+    SerialUSB.println("SocketID: "+ String(socketID));
 
     SerialUSB.println("Init done ");
 }
@@ -1535,11 +1596,13 @@ void SaraR5::main() {
     getGPSPosition(); //Gør sådan at den at den først får positionen hvis der er fix
     //HybridPositioning();
     //SerialUSB.println("GPS done ");
-    ///SerialUSB.println(encodeMessage());
-    
-    turnLED(LOW);
-    turnLED(HIGH);
-    sendHTTPusingPOST();
+    //SerialUSB.println(encodeMessage());
+    payload1 = encodeMessage();
+
+    SendtoCommandUDP(socketID, serverPort, 8080,19, payload1);
+    //getSocketError();
+   
+    //sendHTTPusingPOST();
     //delay(500);
     
     turnLED(LOW);
