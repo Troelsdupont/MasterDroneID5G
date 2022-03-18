@@ -34,6 +34,7 @@ SaraR5::SaraR5(NaviairLib* _droneID){
     PSDprofile = 0;
     HTTPprofile = 0;
     socketID = -1; 
+    socketID1 = -1; 
     
     serialNumber = "ab1234";
 
@@ -1399,11 +1400,11 @@ void SaraR5::sendHTTPusingPOST()
 }
 
 
-int SaraR5::socketOpen(int protocol_OP_code)
+int SaraR5::socketOpen(int protocol_OP_code, int local_port)
 {
     int socketIDoutput = -1; 
     ATcommand = SARA_R5_CREATE_SOCKET;
-    ATcommand += "=" + String(protocol_OP_code);
+    ATcommand += "=" + String(protocol_OP_code) + "," + String(local_port);
 
     int counter = 0;
     while(counter < 4 )
@@ -1539,6 +1540,165 @@ void SaraR5::HEXconfig(int bool1)
         counter = counter + 1;
     }
 }
+void SaraR5::ReceiveFromCommandUDP(int socketID_)
+{
+    ATcommand = SARA_R5_READ_UDP_SOCKET;
+    ATcommand += "=" + String(socketID_) + ",0"; //"=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+
+    int counter = 0;
+    while(counter < 4 )
+    {
+        Serial1.println(ATcommand); //
+        SerialUSB.println("ReveiveFromCommandUDP");//
+        delay(2000);
+        if (Serial1.available()){
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+
+            if(index > -1) //IF "OK" is received
+            {
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                break;
+            }
+            else
+            {
+                SerialUSB.println(ATresponse);
+            }
+        }
+        counter = counter + 1;
+    }
+}
+
+void SaraR5::SetListeningSocket(int socketID_)
+{
+    ATcommand = "AT+USOLI";
+    ATcommand += "=" + String(socketID_) + ",54321"; //"=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+
+    int counter = 0;
+    while(counter < 4 )
+    {
+        Serial1.println(ATcommand); //
+        SerialUSB.println("SetListeningSocket");//
+        delay(2000);
+        if (Serial1.available()){
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+
+            if(index > -1) //IF "OK" is received
+            {
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                break;
+            }
+            else
+            {
+                SerialUSB.println(ATresponse);
+            }
+        }
+        counter = counter + 1;
+    }
+}
+void SaraR5::connectSocket(int socketID_, String IPadress, int remotePort)
+{
+    ATcommand = "AT+USOCO";
+    ATcommand += "=" + String(socketID_) + ",\"" + IPadress + "\"," + String(remotePort); //"=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+
+    int counter = 0;
+    while(counter < 4 )
+    {
+        Serial1.println(ATcommand); //
+        SerialUSB.println("connectSocket");//
+        delay(2000);
+        if (Serial1.available()){
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+
+            if(index > -1) //IF "OK" is received
+            {
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                break;
+            }
+            else
+            {
+                SerialUSB.println(ATresponse);
+            }
+        }
+        counter = counter + 1;
+    }
+}
+
+void SaraR5::writeSocketData(int socketID_, int dataLength, String data1)
+{
+    ATcommand = "AT+USOWR";
+    ATcommand += "=" + String(socketID_) + "," + String(dataLength) + ",\"" + data1 + "\""; //"=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+
+    int counter = 0;
+    while(counter < 4 )
+    {
+        Serial1.println(ATcommand); //
+        SerialUSB.println("writeSocketData");//
+        delay(2000);
+        if (Serial1.available()){
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+
+            if(index > -1) //IF "OK" is received
+            {
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                break;
+            }
+            else
+            {
+                SerialUSB.println(ATresponse);
+            }
+        }
+        counter = counter + 1;
+    }
+}
+
+void SaraR5::readSocketData(int socketID_, int dataLength)
+{
+    ATcommand = "AT+USOWR";
+    ATcommand += "=" + String(socketID_) + "," + String(dataLength); //"=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+
+    int counter = 0;
+    while(counter < 4 )
+    {
+        Serial1.println(ATcommand); //
+        SerialUSB.println("readSocketData");//
+        delay(2000);
+        if (Serial1.available()){
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+
+            if(index > -1) //IF "OK" is received
+            {
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                break;
+            }
+            else
+            {
+                SerialUSB.println(ATresponse);
+            }
+        }
+        counter = counter + 1;
+    }
+}
+
 
 
 void SaraR5::init() { //Setup
@@ -1578,12 +1738,26 @@ void SaraR5::init() { //Setup
     //tester();
 
     //erialUSB.println("socket");
-    HEXconfig(1);
+    HEXconfig(0); // 1= HEX MODE // PÅ Normalt
 
-    socketID = socketOpen(SARA_R5_UDP);
+    socketID = socketOpen(SARA_R5_UDP, 54321);
+    socketID1 = socketOpen(SARA_R5_UDP, 55555);
     
-    SerialUSB.println("SocketID: "+ String(socketID));
+    
+    SerialUSB.println("SocketID: "+ String(socketID1));
 
+    connectSocket(socketID1, serverPort, 8080);
+    //connectSocket(socketID, serverPort, 8080);
+
+
+    payload1 = encodeMessage();
+
+    writeSocketData(socketID1, 19, payload1);
+
+    //SendtoCommandUDP(socketID, serverPort, 8080,19, payload1);
+
+    //SetListeningSocket(socketID);
+   
     SerialUSB.println("Init done ");
 }
 
@@ -1593,18 +1767,38 @@ void SaraR5::main() {
     //
     turnLED(HIGH);
 
-    getGPSPosition(); //Gør sådan at den at den først får positionen hvis der er fix
+   // getGPSPosition(); //Gør sådan at den at den først får positionen hvis der er fix
     //HybridPositioning();
     //SerialUSB.println("GPS done ");
     //SerialUSB.println(encodeMessage());
-    payload1 = encodeMessage();
-
-    SendtoCommandUDP(socketID, serverPort, 8080,19, payload1);
+    //payload1 = encodeMessage(); // PÅ NORMALT
+    //SendtoCommandUDP(socketID, serverPort, 8080,19, payload1); //Normalt På 
     //getSocketError();
-   
+   readSocketData(socketID1,4);
     //sendHTTPusingPOST();
-    delay(500);
-    
+    delay(300);
+    //SetListeningSocket(socketID);
+   
+    delay(2000);
+    if (Serial1.available()){
+        ATresponse = Serial1.readString();
+        //Serial1.println(ATresponse);
+        int index = ATresponse.indexOf("OK");
+        //ATresponse = ATresponse.substring(index,ATresponse.length());
+
+        if(index > -1) //IF "OK" is received
+        {
+            //ATresponse = "OK "; //
+            SerialUSB.println(ATresponse);
+            
+        }
+        else
+        {
+            SerialUSB.println(ATresponse);
+        }
+    }
+
+   // ReceiveFromCommandUDP(socketID);
     turnLED(LOW);
 
 
