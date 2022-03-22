@@ -1775,7 +1775,7 @@ void SaraR5::init() { //Setup
     //HTTP
     setupPSDprofile();  //PÅ Normalt 
 
-    //setupHTTP(); // PÅ NORMALT 
+    //setupHTTP(); // PÅ NORMALT VED HTTP 
 
   //  HybridPositioningSetup();
   //  HybridPositioning();
@@ -1784,9 +1784,9 @@ void SaraR5::init() { //Setup
     //tester();
 
     //erialUSB.println("socket");
-    HEXconfig(0); // 1= HEX MODE // PÅ Normalt
+    HEXconfig(1); // 1= HEX MODE // PÅ Normalt
 
-    //socketID = socketOpen(SARA_R5_UDP, 54321);
+    socketID = socketOpen(SARA_R5_UDP, 54321);
     socketID1 = socketOpen(SARA_R5_TCP, 55555);
     
     
@@ -1813,21 +1813,21 @@ void SaraR5::main() {
     //
     turnLED(HIGH);
 
-   // getGPSPosition(); //Gør sådan at den at den først får positionen hvis der er fix
+    getGPSPosition(); //Gør sådan at den at den først får positionen hvis der er fix
     //HybridPositioning();
     //SerialUSB.println("GPS done ");
     //SerialUSB.println(encodeMessage());
-    //payload1 = encodeMessage(); // PÅ NORMALT
+    payload1 = encodeMessage(); // PÅ NORMALT
    // writeSocketData(socketID1, 38, payload1);
 
-    //SendtoCommandUDP(socketID, serverPort, 8080,19, payload1); //Normalt På 
+    SendtoCommandUDP(socketID, serverPort, 8080,19, payload1); //Normalt På sender på UDP port 
     //getSocketError();
-   readSocketData(socketID1,42);
+    readSocketData(socketID1,42);
     //sendHTTPusingPOST();
  //   delay(300);
     //SetListeningSocket(socketID);
    //getIPaddress();
-    delay(2000);
+    delay(300);
     if (Serial1.available()){
         ATresponse = Serial1.readString();
         //Serial1.println(ATresponse);
