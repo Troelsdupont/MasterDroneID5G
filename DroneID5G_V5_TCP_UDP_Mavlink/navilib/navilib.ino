@@ -1,13 +1,9 @@
 #include "SaraR5.h"
 
-String id = "1"; // ID of the drone
+String id = "ab1234"; // ID of the drone
 
-String apiKey = "1234";
 
-String altitudeRef = "AMSL"; // altitude is meussured in reference to mean sea level
-String altitudeUnit = "m"; // altitude is provided in meters
-
-NaviairLib* droneID = new NaviairLib(id, apiKey, altitudeRef, altitudeUnit);
+DroneID5GLib* droneID = new DroneID5GLib(id);
 SaraR5 saraR5(droneID);
 
 void setup() 
@@ -19,5 +15,6 @@ void setup()
 void loop() 
 {
     saraR5.main();
-    saraR5.printDroneID();
+    // saraR5.printDroneID();
+     
 }

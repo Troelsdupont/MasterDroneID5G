@@ -2,7 +2,7 @@
 #ifndef SaraR5_h
 #define SaraR5_h
 
-#include "NaviairLib.h"
+#include "DroneID5GLib.h"
 #include <TimeLib.h> /// Remember to install the library via the Arduino IDE "Manages libraries"
 
 #define RMCCommas 13
@@ -46,13 +46,13 @@
 class SaraR5
 {
 public:
-    SaraR5(NaviairLib* _droneID);
+    SaraR5(DroneID5GLib* _droneID);
 
     //Functions:
     void init();
     void main();
 
-    void printDroneID(); // Ny
+    void printDroneID(); //
 
     // Variables:
     char GNSSStatus;
@@ -73,7 +73,7 @@ public:
 
 private:
     // Object:
-    NaviairLib* droneID;
+    DroneID5GLib* droneID;
 
     // Variables:
     float rsrq;
@@ -158,7 +158,7 @@ private:
     void SetListeningSocket(int socketID_);
     void connectSocket(int socketID_, String IPadress, int remotePort);
     void writeSocketData(int socketID_, int dataLength, String data1);
-    void readSocketData(int socketID_,int dataLength);
+    String readSocketData(int socketID_,int dataLength);
     void getIPaddress();
 
 

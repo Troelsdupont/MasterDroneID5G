@@ -3,18 +3,18 @@
   Created by David A. Mellis, November 2, 2007.
   Released into the public domain.
 */
-#ifndef NaviairLib_h
-#define NaviairLib_h
+#ifndef DroneID5GLib_h
+#define DroneID5GLib_h
 
 #include "Arduino.h"
 
-class NaviairLib
+class DroneID5GLib
 {
 public:
-    NaviairLib(String _id, String _apiKey, String _altitudeRef, String _altitudeUnit);
+    DroneID5GLib(String _id);
 
     // Functions
-
+    void DecodeVehicle(String inputString);
 
     // Variables:
     long timestamp;
@@ -22,8 +22,6 @@ public:
     float longitude;
     float speed;
     float altitude;
-    String altitudeRef; // Ny
-    String altitudeUnit; // Ny
     float heading;
     float flightTime;
 
@@ -34,8 +32,7 @@ public:
 private:
     String iD;
 
-protected:
-    String apiKey;
+
 };
 
 #endif
