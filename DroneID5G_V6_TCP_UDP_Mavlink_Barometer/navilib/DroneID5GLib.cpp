@@ -95,6 +95,31 @@ void DroneID5GLib::BarometerRead()
   SerialUSB.println(" m");
 }
 
+int DroneID5GLib::HexDigit(char c)
+{
+  if (c >= '0' && c <= '9')
+    return c - '0';
+
+  if (c >= 'A' && c <= 'F')
+    return c - 'A' + 10;
+
+  if (c >= 'a' && c <= 'f')
+    return c - 'a' + 10;
+
+  return 0;
+}
+char DroneID5GLib::HexByte(char *p)
+{
+  char value = 0;
+
+  value += HexDigit(*p++);
+
+  if (*p != '\0')
+  {
+    value = value * 16 +  HexDigit(*p);
+  }
+  return value;
+}
 
 void DroneID5GLib::DecodeVehicle(String inputString)
 {
@@ -171,22 +196,28 @@ void DroneID5GLib::DecodeVehicle(String inputString)
         signed int flags_ = strtol(arrayChar,NULL,16); 
         String flagsBinary = String(flags_,BIN);
 
+        uint8_t emitter_type1 = 0; 
+
         String aircraftType = flagsBinary.substring(0,2);
         if(aircraftType == "00")
         {
           aircraftType = "Unknown";
+          emitter_type1 = ADSB_EMITTER_TYPE_NO_INFO;
         }
         else if(aircraftType == "01")
         {
           aircraftType = "Drone";
+          emitter_type1 = ADSB_EMITTER_TYPE_UAV;
         }
         else if(aircraftType == "10")
         {
           aircraftType = "Aircraft";
+          emitter_type1 = ADSB_EMITTER_TYPE_LARGE;
         }
         else if(aircraftType == "11")
         {
           aircraftType = "Glider";
+          emitter_type1 = ADSB_EMITTER_TYPE_GLIDER;
         }
 
 
@@ -232,13 +263,38 @@ void DroneID5GLib::DecodeVehicle(String inputString)
         arrayChar[str_len];
         altitudeString.toCharArray(arrayChar, str_len);
         signed int altitude_ = strtol(arrayChar,NULL,16); 
-        altitude_ = (altitude_*0.5)-1000;
+        altitude_ = ((altitude_*0.5)-1000)*1000;
 
         // Vertical Speed -- NOT valid ----------------------------------------------
         int ver_velocity_ = 0; 
         
-        // CALLSIGN - NOT VALID ----------------------------------------------------    
+        // CALLSIGN IN ASCII - VALID FROM HEX STRING TO ASCII STRING ----------------------------------------------------    
+        //String callSignString = vehicleString.substring(0,18);
+        str_len = callSignString.length() + 1; 
+        arrayChar[str_len];
+        callSignString.toCharArray(arrayChar, str_len);
         String callsign_ = ""; 
+
+        for (unsigned i = 0; i < str_len; i += 2)
+        {
+          //SerialUSB.print(HexByte(&arrayChar[i]));
+          callsign_ = callsign_ + HexByte(&arrayChar[i]); 
+        }
+
+        while(callsign_[0]=='0')
+        {
+          callsign_ = callsign_.substring(1,callsign_.length());
+        }
+        // CALL SIGN in INT 
+        String callSignSub = callSignString.substring(12,callSignString.length());
+        
+        str_len = callSignSub.length() + 1; 
+        arrayChar[str_len];
+        callSignSub.toCharArray(arrayChar, str_len);
+        signed int callSignInt = strtol(arrayChar,NULL,16); 
+        ICAO_address = callSignInt;
+
+        
 
         // SQUAWK NOT VALID ----------------------------------
         int squawk_ = 0;
@@ -259,11 +315,11 @@ void DroneID5GLib::DecodeVehicle(String inputString)
         age_ = abs(age_ - timestamp); 
 
         //PRINT ---------------------------------------------------------------------
-        SerialUSB.println("Latitude int " + String(lat_) + " LONG INT : " + String(long_) + " FLAGS BIN " + flagsBinary + " AircraftType : " + aircraftType + " altitude_type_ " + altitude_type_ + " heading_ " + String(heading_)); //
-        SerialUSB.println("hor_velocity_" + String(hor_velocity_) + " Altitude "  + String(altitude_) + " AGE " + String(age_) ); 
+        SerialUSB.println("Callsign "+ callsign_ + " Latitude int " + String(lat_) + " LONG INT : " + String(long_) + " FLAGS BIN " + flagsBinary + " AircraftType : " + aircraftType + " altitude_type_ " + altitude_type_ + " heading_ " + String(heading_)); //
+        SerialUSB.println("hor_velocity_" + String(hor_velocity_) + " Altitude "  + String(altitude_) + " AGE " + String(age_) + " ICAO " + String(ICAO_address)); 
 
         // Transfer the Aircraft info to the PX4 
-        adsbVehicle(ICAO_address, lat_, long_, altitude_type_, altitude_, heading_, hor_velocity_, ver_velocity_, callsign_, age_, squawk_);
+        adsbVehicle(ICAO_address, lat_, long_, altitude_type_, altitude_, heading_, hor_velocity_, ver_velocity_, callsign_, 1, squawk_, emitter_type1);
       
       }
 

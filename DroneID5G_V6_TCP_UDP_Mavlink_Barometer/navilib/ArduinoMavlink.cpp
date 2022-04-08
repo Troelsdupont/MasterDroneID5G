@@ -4,7 +4,7 @@
 
 #include "ArduinoMavlink.h"
 
-void adsbVehicle(int ICAO_address_, int lat_, int lon_, String altitude_type_, int altitude_, int heading_, int hor_velocity_, int ver_velocity_, String callsign_, int age_, int squawk_){
+void adsbVehicle(int ICAO_address_, int lat_, int lon_, String altitude_type_, int altitude_, int heading_, int hor_velocity_, int ver_velocity_, String callsign_, int age_, int squawk_, int emitter_type1){
     Serial.begin(57600);
 
     SerialUSB.println("ADS-B Vehicle");
@@ -28,9 +28,11 @@ void adsbVehicle(int ICAO_address_, int lat_, int lon_, String altitude_type_, i
     int16_t ver_velocity = ver_velocity_;
     char callsign[9];
     callsign_.toCharArray(callsign,9);
-    uint8_t emitter_type = ADSB_EMITTER_TYPE_UAV;
+
+    uint8_t emitter_type = emitter_type1; 
+
     uint8_t tslc = age_;
-    uint16_t flags = ADSB_FLAGS_VALID_COORDS + ADSB_FLAGS_VALID_ALTITUDE + ADSB_FLAGS_VALID_HEADING + ADSB_FLAGS_VALID_CALLSIGN + ADSB_FLAGS_SIMULATED;
+    uint16_t flags = ADSB_FLAGS_VALID_COORDS + ADSB_FLAGS_VALID_ALTITUDE + ADSB_FLAGS_VALID_HEADING + ADSB_FLAGS_VALID_CALLSIGN + ADSB_FLAGS_VALID_VELOCITY;
     uint16_t squawk = 0;
 
     // Pack the message

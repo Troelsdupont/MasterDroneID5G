@@ -28,6 +28,8 @@ public:
     void DecodeVehicle(String inputString);
     void BarometerRead();
     void BarometerSetup(); 
+    int HexDigit(char c);
+    char HexByte(char *p);
 
     // Variables:
     long timestamp;
