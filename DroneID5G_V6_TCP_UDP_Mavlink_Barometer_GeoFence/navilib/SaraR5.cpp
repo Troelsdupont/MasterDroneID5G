@@ -1839,7 +1839,6 @@ void SaraR5::main() {
     //
     turnLED(HIGH);
     //SerialUSB.println("Hej");
-    delay(1000);
     droneID->BarometerRead();
 
 
