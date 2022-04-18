@@ -196,6 +196,10 @@ void DroneID5GLib::DecodeVehicle(String inputString)
         signed int flags_ = strtol(arrayChar,NULL,16); 
         String flagsBinary = String(flags_,BIN);
 
+        while (flagsBinary.length() < 5){
+          flagsBinary = "0" + flagsBinary;
+        }
+
         uint8_t emitter_type1 = 0; 
 
         String aircraftType = flagsBinary.substring(0,2);
