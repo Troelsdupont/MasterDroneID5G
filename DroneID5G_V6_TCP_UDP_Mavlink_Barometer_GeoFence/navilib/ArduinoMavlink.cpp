@@ -158,7 +158,7 @@ bool listingForMissionAck(){
         mavlink_mission_ack_t missionack;
         mavlink_msg_mission_ack_decode(&msg, &missionack);
 
-        if (missionack.type == 0){
+        if (missionack.type == MAV_MISSION_ACCEPTED){
           return true;
         } else {
           return false;
