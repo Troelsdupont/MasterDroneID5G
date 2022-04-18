@@ -62,8 +62,12 @@ void uploadGeoFenceCircle(int lat_, int long_, int radius){
     // Listing for mission request
     int request = listingForMissionItems();
 
+
     // Answer request
     if (request == 0){
+
+    SerialUSB.print("Request: "); SerialUSB.println(request);
+
       uint16_t seq = 0;
       uint8_t frame = MAV_FRAME_GLOBAL; // Set target frame to global default
       uint16_t command = MAV_CMD_NAV_FENCE_CIRCLE_INCLUSION; // Specific command for PX4
@@ -123,6 +127,7 @@ void mission_count(int count_, int system_id, int component_id){
   
   // Send the message (.write sends as bytes)
   Serial.write(buf, len);
+  SerialUSB.print("Writing "); SerialUSB.print(count); SerialUSB.println(" mission item.");
 }
 
 int listingForMissionItems(){
@@ -135,7 +140,15 @@ int listingForMissionItems(){
     // Check for new mavlink message
     if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)){
 
+      if(msg.msgid == MAVLINK_MSG_ID_MISSION_REQUEST){
+        mavlink_mission_request_t missionreq;
+        mavlink_msg_mission_request_decode(&msg, &missionreq);
+        return missionreq.seq;
+      }
+
+
       if(msg.msgid == MAVLINK_MSG_ID_MISSION_REQUEST_INT){
+       SerialUSB.println(msg.msgid);
         mavlink_mission_request_int_t missionreq;
         mavlink_msg_mission_request_int_decode(&msg, &missionreq);
 
@@ -143,6 +156,7 @@ int listingForMissionItems(){
       }
     }
   }
+  return -1;
 }
 
 bool listingForMissionAck(){
@@ -157,6 +171,8 @@ bool listingForMissionAck(){
       if(msg.msgid == MAVLINK_MSG_ID_MISSION_ACK){
         mavlink_mission_ack_t missionack;
         mavlink_msg_mission_ack_decode(&msg, &missionack);
+
+        //SerialUSB.println(missionack.type);
 
         if (missionack.type == MAV_MISSION_ACCEPTED){
           return true;
