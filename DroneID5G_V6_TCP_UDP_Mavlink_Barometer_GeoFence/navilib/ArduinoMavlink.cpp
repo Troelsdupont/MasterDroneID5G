@@ -53,12 +53,14 @@ void uploadGeoFenceCircle(int lat_, int long_, int radius){
 
   int count = 1; 
 
-  // Send count
-  mission_count(count, system_id,component_id);
+  
+
 
   bool success = false;
   // Loop:
   while (success == false){
+    delay(250);
+
     // Listing for mission request
     int request = listingForMissionItems();
 
@@ -101,6 +103,9 @@ void uploadGeoFenceCircle(int lat_, int long_, int radius){
     // Listing mission ack
     if(listingForMissionAck()){
       success = true;
+    } else {
+      // Send count
+      mission_count(count, system_id,component_id);
     }
 
   }

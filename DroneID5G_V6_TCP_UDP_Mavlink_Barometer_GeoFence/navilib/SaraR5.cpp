@@ -102,7 +102,7 @@ void SaraR5::beginSerial(){
     Serial1.setTimeout(10);
 
     SerialUSB.begin(115200);
-    while (!SerialUSB) {  ;  }
+    //while (!SerialUSB) {  ;  }
 
     SerialUSB.println("New upload!");
 }
@@ -1371,7 +1371,7 @@ String SaraR5::encodeMessage()
 
     // Encoded 
     SerialUSB.print(serialNumber + " Flags: " + String(EncodedFlags, HEX) + " Speed :" + hexEncodedSpeed + " Heading : " + hexEncodedHeading + " LAT:"+ String(hexEncodedLat) + " Lon:" + String(hexEncodedLong) + " AMSL:" + String(hexEncodedAMSL) + " AGL: "+ String(hexEncodedAGL) + " HDOP:" + String(hexEncodedHDOP) + " VDOP:" + String(hexEncodedVDOP) + " Time:" + String(hexEncodedTime));
-    outputString =  serialNumber + String(EncodedFlags, HEX) + hexEncodedSpeed + hexEncodedHeading + String(hexEncodedLat) + String(hexEncodedLong) + String(hexEncodedAMSL) + String(hexEncodedHDOP) + String(hexEncodedVDOP) + String(hexEncodedTime);
+    outputString =  serialNumber + String(EncodedFlags, HEX) + hexEncodedSpeed + hexEncodedHeading + String(hexEncodedLat) + String(hexEncodedLong) + String(hexEncodedAGL) + String(hexEncodedHDOP) + String(hexEncodedVDOP) + String(hexEncodedTime);
     
     return outputString;
 }
