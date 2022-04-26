@@ -58,17 +58,21 @@ void DroneID5GLib::BarometerSetup()
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 
+  SeaLevelPressure = bmp.seaLevelForAltitude(altitude, bmp.readPressure())/100; // in hPa 
+  
+  SerialUSB.println("Altitude GNSS : ");
+  SerialUSB.print(altitude);
 
   for (int i=0; i <10; i++) {
-    initialHeight = initialHeight + bmp.readAltitude(990); 
+    initialHeight = initialHeight + bmp.readAltitude(SeaLevelPressure); 
     SerialUSB.print(F("Approx altitude = "));
-    SerialUSB.print(bmp.readAltitude(990)); /* Adjusted to local forecast! */
+    SerialUSB.print(bmp.readAltitude(SeaLevelPressure)); /* Adjusted to local forecast! */
     SerialUSB.println(" m");
     delay(100); 
   }
   
   initialHeight = initialHeight/10; 
-  SerialUSB.print(F("GNS altitude = "));
+  
   SerialUSB.print(initialHeight); /* Adjusted to local forecast! */
   SerialUSB.println(" m");
   
@@ -77,7 +81,6 @@ void DroneID5GLib::BarometerSetup()
 void DroneID5GLib::BarometerRead()
 {
   SerialUSB.println("Barometer Read "); // 
-
   // SerialUSB.print(F("Temperature = "));
   // SerialUSB.print(bmp.readTemperature());
   // SerialUSB.println(" *C");
@@ -89,10 +92,20 @@ void DroneID5GLib::BarometerRead()
   // SerialUSB.print(F("Approx altitude = "));
   // SerialUSB.print(bmp.readAltitude(990)); /* Adjusted to local forecast! */
   // SerialUSB.println(" m");
-  AGL = bmp.readAltitude(990)-initialHeight;
-  SerialUSB.print(F("Height above takeoff = "));
-  SerialUSB.print(AGL); 
+  
+  AMSL_Baro = bmp.readAltitude(SeaLevelPressure); 
+  SerialUSB.print(F("AMSL_Baro = "));
+  SerialUSB.print(AMSL_Baro); 
   SerialUSB.println(" m");
+  
+  AGL_Baro = AMSL_Baro-initialHeight;
+  SerialUSB.print(F("AGL_Baro = "));
+  SerialUSB.print(AGL_Baro); 
+  SerialUSB.println(" m");
+
+  
+  
+
 }
 
 int DroneID5GLib::HexDigit(char c)

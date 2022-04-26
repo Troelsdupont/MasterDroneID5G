@@ -52,7 +52,7 @@ void uploadGeoFenceCircle(int lat_, int long_, int radius){
   uint8_t _target_component = 0; // Pixhawk component id, 0 = all (seems to work fine)
 
   int count = 1; 
-
+  int tryCounter = 0; 
   
 
 
@@ -91,7 +91,7 @@ void uploadGeoFenceCircle(int lat_, int long_, int radius){
 
       // Pack the message
       mavlink_msg_mission_item_int_pack(system_id, component_id, &msg, _target_system, _target_component, seq, frame, command, current, autocontinue, param1, param2, param3, param4, x, y, z, mission_type);
-      //uint16_t mavlink_msg_mission_item_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, uint8_t target_system, uint8_t target_component, uint16_t seq, uint8_t frame, uint16_t command, uint8_t current, uint8_t autocontinue, float param1, float param2, float param3, float param4, float x, float y, float z
+      //  uint16_t mavlink_msg_mission_item_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg, uint8_t target_system, uint8_t target_component, uint16_t seq, uint8_t frame, uint16_t command, uint8_t current, uint8_t autocontinue, float param1, float param2, float param3, float param4, float x, float y, float z
       
       // Copy the message to the send buffer
       uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -106,8 +106,12 @@ void uploadGeoFenceCircle(int lat_, int long_, int radius){
     } else {
       // Send count
       mission_count(count, system_id,component_id);
+      tryCounter = tryCounter +1; 
     }
-
+    if(tryCounter>10){
+      SerialUSB.println("FAILED to upload Geofence to PX4");
+      break; 
+    }
   }
     
   SerialUSB.println("Finish uploading geofence");

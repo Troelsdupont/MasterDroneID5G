@@ -358,7 +358,12 @@ void SaraR5::getGPSPosition() {
         SerialUSB.print("No GPS ");
     }
 
-    
+    if (GNSSStatus != 'A')
+    {
+        SerialUSB.println("Finding GNSS fix");
+        SerialUSB.println(GNSSStatus);
+        
+    }
     //while (!Serial1.available()); /// Wait on data
     //SerialUSB.println("Print 4 ");
 }
@@ -1298,7 +1303,7 @@ String SaraR5::encodeMessage()
         hexEncodedAMSL = "0" + hexEncodedAMSL; 
     }
     // Altitude AGL 
-    float valueAGL = droneID->AGL;
+    float valueAGL = droneID->AGL_Baro;
     uint16_t encodedAGL = 0; 
     encodedAGL = round((valueAGL+1000)/0.5);
     String hexEncodedAGL = String(encodedAGL,HEX);
@@ -1370,6 +1375,7 @@ String SaraR5::encodeMessage()
 
 
     // Encoded 
+    SerialUSB.print(serialNumber + " Flags: " + String(EncodedFlags) + " Speed :" + String(speedFloat) + " Heading : " + String(valueHeading) + " LAT:"+ String(droneID->latitude,7) + " Lon:" + String(droneID->longitude,7) + " AMSL:" + String(valueAMSL) + " AGL: "+ String(valueAGL) + " HDOP:" + String(valueHDOP) + " VDOP:" + String(valueVDOP) + " Time:" + String(valueTime));
     SerialUSB.print(serialNumber + " Flags: " + String(EncodedFlags, HEX) + " Speed :" + hexEncodedSpeed + " Heading : " + hexEncodedHeading + " LAT:"+ String(hexEncodedLat) + " Lon:" + String(hexEncodedLong) + " AMSL:" + String(hexEncodedAMSL) + " AGL: "+ String(hexEncodedAGL) + " HDOP:" + String(hexEncodedHDOP) + " VDOP:" + String(hexEncodedVDOP) + " Time:" + String(hexEncodedTime));
     outputString =  serialNumber + String(EncodedFlags, HEX) + hexEncodedSpeed + hexEncodedHeading + String(hexEncodedLat) + String(hexEncodedLong) + String(hexEncodedAGL) + String(hexEncodedHDOP) + String(hexEncodedVDOP) + String(hexEncodedTime);
     
@@ -1821,7 +1827,13 @@ void SaraR5::init() { //Setup
     connectSocket(socketID1, serverPort, 7070); // På normalt når der en TCP ofrbindelse oprettet
     //connectSocket(socketID, serverPort, 8080);
 
+    getGPSPosition(); 
 
+    while (GNSSStatus != 'A')
+    {
+        getGPSPosition(); //Gør sådan at den at den først får positionen hvis der er fix
+    }
+    
     payload1 = encodeMessage();
 
    // writeSocketData(socketID1, 38, payload1);

@@ -38,7 +38,9 @@ public:
     float altitude;
     float heading;
     float flightTime;
-    float AGL; 
+    float AGL_Baro; 
+    float AMSL_Baro; 
+    float SeaLevelPressure;
 
     float pDop; // Ny
     float hDop; // Ny
