@@ -1,6 +1,5 @@
 /*
   SaraR5.cpp - Library for sending HTTP ATcommands to Naviair via u-blox SARA-R5 chip.
-
 */
 
 #include "SaraR5.h"
@@ -124,6 +123,7 @@ void SaraR5::waitForLTESignal() {
             break;
         }
         //Serial.println(counter);
+        RSSI();
     }
 }
 
@@ -360,8 +360,8 @@ void SaraR5::getGPSPosition() {
 
     if (GNSSStatus != 'A')
     {
-        SerialUSB.println("Finding GNSS fix");
-        SerialUSB.println(GNSSStatus);
+        
+        SerialUSB.print(GNSSStatus);
         
     }
     //while (!Serial1.available()); /// Wait on data
@@ -391,6 +391,9 @@ void SaraR5::parseGRMCMessage(String &str) {
     }
      */
     c = str[commaPositions[2]+1];
+
+    if(c == 'A' || c == 'v'){
+
     changeInGNSSFIX(c);
 
     //GNSSStatus = str[commaPositions[1]+1];
@@ -427,6 +430,10 @@ void SaraR5::parseGRMCMessage(String &str) {
 
         }
     }
+    }
+
+    
+    
     //SerialUSB.println("Slut parseGRMCMessage");
 }
 
@@ -838,20 +845,21 @@ void SaraR5::RSSI()
             if(index > -1) //IF "OK" is received
             {
                 //ATresponse = "OK "; //
-                str = ATresponse.substring(ATresponse.indexOf(":")+1,commaList[4]); // RSSI
+                str = ATresponse.substring(ATresponse.indexOf(":")+1,ATresponse.indexOf(",")); // RSSI
                 temp = str.toInt();
 
 
-                    // SerialUSB.println(str);
+              //  SerialUSB.println(ATresponse);
                     
-                    // SerialUSB.println(temp);
+               // SerialUSB.println("str" + str);
                     
-                if (temp <= 32)
-                    rssi = temp*2  - 113;
-                else if(temp == 99)
-                    rssi = 255;
+                // if (temp <= 32)
+                //     rssi = temp*2  - 113;
+                // else if(temp == 99)
+                //     rssi = 255;
+                rssi = temp;
 
-                SerialUSB.print(rssi); SerialUSB.println(" - RSSI");
+               // SerialUSB.print(rssi); SerialUSB.println(" - RSSI");
                 break;
             }
             else
@@ -1293,23 +1301,34 @@ String SaraR5::encodeMessage()
     }
 
     // SerialUSB.println("Heading Q" + String(droneID->heading));
-    // Altitude AMSL 
-    float valueAMSL = String(droneID->altitude,2).toFloat(); 
-    uint16_t encodedAMSL = 0; 
-    encodedAMSL = round((valueAMSL+1000)/0.5);
-    String hexEncodedAMSL = String(encodedAMSL,HEX);
-    while(hexEncodedAMSL.length()<4)
+    
+    // Altitude AMSL_GNSS
+    float valueAMSL_GNSS = String(droneID->altitude,2).toFloat(); 
+    uint16_t encodedAMSL_GNSS = 0; 
+    encodedAMSL_GNSS = round((valueAMSL_GNSS+1000)/0.5);
+    String hexEncodedAMSL_GNSS = String(encodedAMSL_GNSS,HEX);
+    while(hexEncodedAMSL_GNSS.length()<4)
     {
-        hexEncodedAMSL = "0" + hexEncodedAMSL; 
+        hexEncodedAMSL_GNSS = "0" + hexEncodedAMSL_GNSS; 
     }
-    // Altitude AGL 
-    float valueAGL = droneID->AGL_Baro;
-    uint16_t encodedAGL = 0; 
-    encodedAGL = round((valueAGL+1000)/0.5);
-    String hexEncodedAGL = String(encodedAGL,HEX);
-    while(hexEncodedAGL.length()<4)
+    // Altitude AGL BARO 
+    float valueAGL_Baro = droneID->AGL_Baro;
+    uint16_t encodedAGL_Baro = 0; 
+    encodedAGL_Baro = round((valueAGL_Baro+1000)/0.5);
+    String hexEncodedAGL_Baro = String(encodedAGL_Baro,HEX);
+    while(hexEncodedAGL_Baro.length()<4)
     {
-        hexEncodedAGL = "0" + hexEncodedAGL; 
+        hexEncodedAGL_Baro = "0" + hexEncodedAGL_Baro; 
+    }
+
+       // Altitude AMSL BARO 
+    float valueAMSL_Baro = droneID->AMSL_Baro;
+    uint16_t encodedAMSL_Baro = 0; 
+    encodedAMSL_Baro = round((valueAMSL_Baro+1000)/0.5);
+    String hexEncodedAMSL_Baro = String(encodedAMSL_Baro,HEX);
+    while(hexEncodedAMSL_Baro.length()<4)
+    {
+        hexEncodedAMSL_Baro = "0" + hexEncodedAMSL_Baro; 
     }
 
 
@@ -1372,12 +1391,20 @@ String SaraR5::encodeMessage()
         hexEncodedLat = "00000000";
         hexEncodedLong = "00000000";       
     }
+    // RSSI encoding 
+    String hexRSSI = String(rssi, HEX);
+    while(hexRSSI.length()<2)
+    {
+        hexRSSI = "0" + hexRSSI; 
+    }
+
+
 
 
     // Encoded 
-    SerialUSB.print(serialNumber + " Flags: " + String(EncodedFlags) + " Speed :" + String(speedFloat) + " Heading : " + String(valueHeading) + " LAT:"+ String(droneID->latitude,7) + " Lon:" + String(droneID->longitude,7) + " AMSL:" + String(valueAMSL) + " AGL: "+ String(valueAGL) + " HDOP:" + String(valueHDOP) + " VDOP:" + String(valueVDOP) + " Time:" + String(valueTime));
-    SerialUSB.print(serialNumber + " Flags: " + String(EncodedFlags, HEX) + " Speed :" + hexEncodedSpeed + " Heading : " + hexEncodedHeading + " LAT:"+ String(hexEncodedLat) + " Lon:" + String(hexEncodedLong) + " AMSL:" + String(hexEncodedAMSL) + " AGL: "+ String(hexEncodedAGL) + " HDOP:" + String(hexEncodedHDOP) + " VDOP:" + String(hexEncodedVDOP) + " Time:" + String(hexEncodedTime));
-    outputString =  serialNumber + String(EncodedFlags, HEX) + hexEncodedSpeed + hexEncodedHeading + String(hexEncodedLat) + String(hexEncodedLong) + String(hexEncodedAGL) + String(hexEncodedHDOP) + String(hexEncodedVDOP) + String(hexEncodedTime);
+    SerialUSB.println(serialNumber + " Flags: " + String(EncodedFlags) + " Speed :" + String(speedFloat) + " Heading : " + String(valueHeading) + " LAT:"+ String(droneID->latitude,7) + " Lon:" + String(droneID->longitude,7) + " AMSL_GNSS: " + String(valueAMSL_GNSS) + " AGL_Baro: "+ String(valueAGL_Baro) + " AMSL_Baro: " + String(valueAMSL_Baro) +  " HDOP:" + String(valueHDOP) + " VDOP:" + String(valueVDOP) + " Time:" + String(valueTime) + " RSSI: " + String(rssi));
+    SerialUSB.println(serialNumber + " Flags: " + String(EncodedFlags, HEX) + " Speed :" + hexEncodedSpeed + " Heading : " + hexEncodedHeading + " LAT:"+ String(hexEncodedLat) + " Lon:" + String(hexEncodedLong) + " AMSL_GNSS: " + String(hexEncodedAMSL_GNSS) + " AGL_Baro: " + String(hexEncodedAGL_Baro) +"AMSL_Baro: " + String(hexEncodedAMSL_Baro) + " HDOP:" + String(hexEncodedHDOP) + " VDOP:" + String(hexEncodedVDOP) + " Time:" + String(hexEncodedTime) + " RSSI: " + String(hexRSSI));
+    outputString =  serialNumber + String(EncodedFlags, HEX) + hexEncodedSpeed + hexEncodedHeading + hexEncodedLat + hexEncodedLong + hexEncodedAGL_Baro + hexEncodedHDOP + hexEncodedVDOP + hexEncodedTime + hexRSSI + hexEncodedAMSL_GNSS; 
     
     return outputString;
 }
@@ -1463,7 +1490,7 @@ void SaraR5::SendtoCommandUDP(int socketID, String remote_IP_adress, int remote_
     while(counter < 4 )
     {
         Serial1.println(ATcommand); //
-        SerialUSB.println("SendTo UDP message");//
+        SerialUSB.print("SendTo UDP message");//
         
         ATresponseCounter= 0; 
         while(!Serial1.available() && ATresponseCounter<100)
@@ -1477,17 +1504,22 @@ void SaraR5::SendtoCommandUDP(int socketID, String remote_IP_adress, int remote_
             //Serial1.println(ATresponse);
             int index = ATresponse.indexOf("OK");
             //ATresponse = ATresponse.substring(index,ATresponse.length());
-
+            
             if(index > -1) //IF "OK" is received
             {
                 //ATresponse = "OK "; //
-                SerialUSB.println(ATresponse);
+                SerialUSB.println(" - got OK " + dataString);
                 
                 break;
             }
             else
             {
                 SerialUSB.println(ATresponse);
+                if(ATresponse.indexOf("ERROR")>-1)
+                {
+                    ReConnect();
+                }
+                
             }
         }
         counter = counter + 1;
@@ -1703,7 +1735,7 @@ String SaraR5::readSocketData(int socketID_, int dataLength)
     while(counter < 4 )
     {
         Serial1.println(ATcommand); //
-        SerialUSB.println("readSocketData"); //
+        SerialUSB.print("readSocketData"); //
 
         ATresponseCounter= 0; 
         while(!Serial1.available() && ATresponseCounter<100)
@@ -1725,7 +1757,7 @@ String SaraR5::readSocketData(int socketID_, int dataLength)
                 //OutputString = ATresponse.substring(ATresponse.indexOf(",\"")+2,ATresponse.length()); // ATresponse.indexOf("\"\n")-3);
                 //OutputString = OutputString.substring(0, OutputString.indexOf("\"")-1);
                 
-                //SerialUSB.println("1+ " + ATresponse);
+                SerialUSB.println(" - got OK");
                 break;
             }
             else
@@ -1741,6 +1773,12 @@ String SaraR5::readSocketData(int socketID_, int dataLength)
     OutputString = OutputString.substring(0, OutputString.indexOf("\""));
     
     //SerialUSB.println("Test+ " + OutputString);
+    if(OutputString.length()<10)
+    {
+        SocketControl(socketID1,10); 
+    }
+
+
     return OutputString;
     
 }
@@ -1777,6 +1815,119 @@ void SaraR5::getIPaddress()
 }
 
 
+void SaraR5::SocketControl(int socketID_,int param_id)
+{
+    ATcommand = "AT+USOCTL";
+    ATcommand += "=" + String(socketID_) + "," + String(param_id); //"=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+    int ATresponseCounter; 
+    int counter = 0;
+    while(counter < 4 )
+    {
+        Serial1.println(ATcommand); //
+        SerialUSB.print("SocketControl"); //
+
+        ATresponseCounter= 0; 
+        while(!Serial1.available() && ATresponseCounter<100)
+        {
+            delay(10);
+            ATresponseCounter = ATresponseCounter + 1; 
+        }
+
+        //delay(100);
+        if (Serial1.available()){
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+           
+            if(index > -1) //IF "OK" is received
+            {
+                //ATresponse = "OK "; //
+                //OutputString = ATresponse.substring(ATresponse.indexOf(",\"")+2,ATresponse.length()); // ATresponse.indexOf("\"\n")-3);
+                //OutputString = OutputString.substring(0, OutputString.indexOf("\"")-1);
+                if(ATresponse.indexOf("4")>-1)
+                {
+                    SerialUSB.println(" - TCP connection is in ESTABILISHED status");
+                }
+                else 
+                {
+                    SerialUSB.println("- TCP is NOT  in connection ESTABILISHED status");
+                    SerialUSB.println(ATresponse);
+                    connectSocket(socketID1, serverPort, 7070); 
+                }
+               
+                    
+                break;
+            }
+            else
+            {
+                SerialUSB.println("NO OK ?  " + ATresponse);
+            }
+        }
+        counter = counter + 1;
+
+
+    }
+    
+    //SerialUSB.println("Test+ " + OutputString);
+    
+    
+}
+
+void SaraR5::SilentReset() {
+    ATcommand = "AT+CFUN=16";
+   // ATcommand += "=" + String(socketID_) + "," + String(dataLength); //"=" + String(socketID) + ",\"" + remote_IP_adress + "\"," + String(remote_port) + "," + String(bytesWritten) + ",\"" + dataString + "\""  ;
+
+    int counter = 0;
+    while(counter < 4 )
+    {
+        Serial1.println(ATcommand); //
+        SerialUSB.println("SiletnReset");//
+        delay(500);
+        if (Serial1.available()){
+            ATresponse = Serial1.readString();
+            //Serial1.println(ATresponse);
+            int index = ATresponse.indexOf("OK");
+            //ATresponse = ATresponse.substring(index,ATresponse.length());
+
+            if(index > -1) //IF "OK" is received
+            {
+                //ATresponse = "OK "; //
+                SerialUSB.println(ATresponse);
+                break;
+            }
+            else
+            {
+                SerialUSB.println(ATresponse);
+            }
+        }
+        counter = counter + 1;
+    }
+}
+
+void SaraR5::ReConnect() {
+    
+    SerialUSB.println("Reconnecting... ");
+    SilentReset();
+
+    waitForLTESignal(); //PÅ NORMALT 
+    //enableCellInformation();
+
+    //HTTP
+    setupPSDprofile();  //PÅ Normalt 
+
+    socketID = socketOpen(SARA_R5_UDP, 54321);    // UDP 
+    socketID1 = socketOpen(SARA_R5_TCP, 55555);   // PÅ NORMALT VED TCP FORBINDELSE 
+
+
+    SerialUSB.println("SocketID UDP: "+ String(socketID));
+
+    SerialUSB.println("SocketID TCP: "+ String(socketID1));
+
+    connectSocket(socketID1, serverPort, 7070); // På normalt når der en TCP ofrbindelse oprettet
+  
+}
+
 void SaraR5::init() { //Setup
     
    
@@ -1811,7 +1962,7 @@ void SaraR5::init() { //Setup
 
   //  HybridPositioningSetup();
   //  HybridPositioning();
-
+    
 
     //tester();
 
@@ -1829,9 +1980,11 @@ void SaraR5::init() { //Setup
 
     getGPSPosition(); 
 
+    SerialUSB.println("Finding GNSS fix");
     while (GNSSStatus != 'A')
     {
         getGPSPosition(); //Gør sådan at den at den først får positionen hvis der er fix
+        delay(200);
     }
     
     payload1 = encodeMessage();
@@ -1851,27 +2004,30 @@ void SaraR5::main() {
     //
     turnLED(HIGH);
     //SerialUSB.println("Hej");
-    droneID->BarometerRead();
 
+    droneID->BarometerRead();
 
     getGPSPosition(); //Gør sådan at den at den først får positionen hvis der er fix
     //HybridPositioning();
+
     //SerialUSB.println("GPS done ");
     //SerialUSB.println(encodeMessage());
     payload1 = encodeMessage(); // PÅ NORMALT
    // writeSocketData(socketID1, 38, payload1);
 
-    SendtoCommandUDP(socketID, serverPort, 8080,19, payload1); //Normalt På sender på UDP port 
+   // delay(33);
+    SendtoCommandUDP(socketID, serverPort, 8080,22, payload1); //Normalt På sender på UDP port 
     //getSocketError();
-    //readSocketData(socketID1,192); // 24*8 = 192 
+    //readSocketData(socketID1,192); // 24*8 = 192 // IKKE PÅ NORMALT 
 
     droneID->DecodeVehicle(readSocketData(socketID1,192));
     //sendHTTPusingPOST();
     //   delay(300);
-   
+    
+
     //SetListeningSocket(socketID);
    //getIPaddress();
-    delay(300);
+    delay(185);
     if (Serial1.available()){
         ATresponse = Serial1.readString();
         //Serial1.println(ATresponse);
@@ -1889,9 +2045,11 @@ void SaraR5::main() {
             SerialUSB.println(ATresponse);
         }
     }
+    RSSI();
 
    // ReceiveFromCommandUDP(socketID);
     turnLED(LOW);
+    SerialUSB.println(GNSSStatus);
 
     if (GNSSStatus == 'A')
     {
@@ -1908,5 +2066,7 @@ void SaraR5::main() {
         //delay(100);
     }
     
-        
+    SerialUSB.println(" ");
+    
+    SerialUSB.println(" ");    
 }

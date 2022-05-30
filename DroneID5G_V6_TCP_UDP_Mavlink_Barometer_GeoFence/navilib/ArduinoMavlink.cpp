@@ -95,6 +95,8 @@ void uploadGeoFenceCircle(int lat_, int long_, int radius){
       
       // Copy the message to the send buffer
       uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+      delay(500);
       
       // Send the message (.write sends as bytes)
       Serial.write(buf, len);
@@ -193,4 +195,3 @@ bool listingForMissionAck(){
   }
 
 }
-

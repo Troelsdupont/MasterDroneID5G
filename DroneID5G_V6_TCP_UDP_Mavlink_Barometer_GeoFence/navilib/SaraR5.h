@@ -161,6 +161,10 @@ private:
     String readSocketData(int socketID_,int dataLength);
     void getIPaddress();
 
+    void ReConnect();
+    void SilentReset(); 
+    void SocketControl(int socketID_,int param_id);
+    
 
 };
 
