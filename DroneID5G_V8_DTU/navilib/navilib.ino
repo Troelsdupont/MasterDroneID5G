@@ -1,7 +1,7 @@
 #include "SaraR5.h"
 #include "ArduinoMavlink.h"
 
-String id = "ab1234"; // ID of the drone
+String id = "ff5555"; // ID of the drone
 
 
 DroneID5GLib* droneID = new DroneID5GLib(id);

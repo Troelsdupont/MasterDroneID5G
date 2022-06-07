@@ -35,7 +35,7 @@ SaraR5::SaraR5(DroneID5GLib* _droneID){
     socketID = -1; 
     socketID1 = -1; 
     
-    serialNumber = "ab1234";
+    serialNumber = _droneID->iD;
 
     ATcommand = "{\"write_api_key\": \"RJ9P1U1PKXIYX8MS\",\"updates\": [{\"delta_t\": 0,\"field1\": 1.0,\"field2\": \"2.0";
     ATresponse = "{\"write_api_key\": \"RJ9P1U1PKXIYX8MS\",\"updates\": [{\"delta_t\": 0,\"field1\": 1.0,\"field2\": \"2.0";
@@ -241,6 +241,8 @@ void SaraR5::enableCellInformation() {
 String SaraR5::getOperatorInfo() {
     SerialSARA.println("AT+COPS?\r");
     String ATresponse = "no ATresponse";
+    delay(1000);
+    SerialSARA.println("AT+CREG?\r");
     delay(1000);
     while (SerialSARA.available()){
         ATresponse = SerialSARA.readString();
@@ -859,7 +861,7 @@ void SaraR5::RSSI()
                 //     rssi = 255;
                 rssi = temp;
 
-               // Serial.print(rssi); Serial.println(" - RSSI");
+                Serial.print(rssi); Serial.println(" - RSSI");
                 break;
             }
             else
@@ -1404,7 +1406,7 @@ String SaraR5::encodeMessage()
     // Encoded 
     Serial.println(serialNumber + " Flags: " + String(EncodedFlags) + " Speed :" + String(speedFloat) + " Heading : " + String(valueHeading) + " LAT:"+ String(droneID->latitude,7) + " Lon:" + String(droneID->longitude,7) + " AMSL_GNSS: " + String(valueAMSL_GNSS) + " AGL_Baro: "+ String(valueAGL_Baro) + " AMSL_Baro: " + String(valueAMSL_Baro) +  " HDOP:" + String(valueHDOP) + " VDOP:" + String(valueVDOP) + " Time:" + String(valueTime) + " RSSI: " + String(rssi));
     Serial.println(serialNumber + " Flags: " + String(EncodedFlags, HEX) + " Speed :" + hexEncodedSpeed + " Heading : " + hexEncodedHeading + " LAT:"+ String(hexEncodedLat) + " Lon:" + String(hexEncodedLong) + " AMSL_GNSS: " + String(hexEncodedAMSL_GNSS) + " AGL_Baro: " + String(hexEncodedAGL_Baro) +"AMSL_Baro: " + String(hexEncodedAMSL_Baro) + " HDOP:" + String(hexEncodedHDOP) + " VDOP:" + String(hexEncodedVDOP) + " Time:" + String(hexEncodedTime) + " RSSI: " + String(hexRSSI));
-    outputString =  serialNumber + String(EncodedFlags, HEX) + hexEncodedSpeed + hexEncodedHeading + hexEncodedLat + hexEncodedLong + hexEncodedAGL_Baro + hexEncodedHDOP + hexEncodedVDOP + hexEncodedTime + hexRSSI + hexEncodedAMSL_GNSS; 
+    outputString =  serialNumber + String(EncodedFlags, HEX) + hexEncodedSpeed + hexEncodedHeading + hexEncodedLat + hexEncodedLong + hexEncodedAMSL_GNSS + hexEncodedHDOP + hexEncodedVDOP + hexEncodedTime + hexRSSI + hexEncodedAGL_Baro; 
     
     return outputString;
 }
@@ -2055,6 +2057,10 @@ void SaraR5::init() { //Setup
     digitalWrite(SARA_PWR_ON, LOW);
     Serial.begin(baud);
     SerialSARA.begin(baud);
+    // Enable ANT_GNSS
+    pinMode(24, OUTPUT);
+    digitalWrite(24, HIGH);
+
 
     //turnLED(HIGH);
 
@@ -2063,19 +2069,19 @@ void SaraR5::init() { //Setup
     waitForBoardOK(); // På normalt 
     checkSimCardId(); // På normalt 
 
+    /*
      delay(1000);
-
-    SerialSARA.println("AT+COPS=0\r");
+    
+    //SerialSARA.println("AT+CFUN?\r");//7,3,8,9\r");//;AT+CNUM\r");//1,0,\"TDC\",7\r");
     String ATresponse = "No Res";
     delay(1000);
-        if (SerialSARA.available()){
-            ATresponse = SerialSARA.readString();
-
-            Serial.println(ATresponse);
-        }
-            Serial.println(ATresponse);
-    
-
+    if (SerialSARA.available()){
+        ATresponse = SerialSARA.readString();
+        Serial.println(ATresponse);
+    } else {
+        Serial.println(ATresponse);
+    }
+    */
     //droneID->uploadGeoFence();
 
     //searchForNetworks(); // Er ikke på normalt 

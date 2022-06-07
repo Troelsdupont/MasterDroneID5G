@@ -28,6 +28,9 @@ DroneID5GLib::DroneID5GLib(String _id){
   hDop = 0.0;
   vDop = 0.0;
 
+  AGL_Baro = 0.0; 
+  AMSL_Baro = 0.0;
+
 }
 
 void DroneID5GLib::BarometerSetup()
